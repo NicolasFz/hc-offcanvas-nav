@@ -35,7 +35,6 @@
 
   const hcOffcanvasNav = function HcOffcanvasNav(elem, options) {
     options = options || {};
-
     // use querySelector if string is passed
     if (typeof elem === 'string') {
       elem = elem.charAt(0) === '#' && elem.indexOf(' ') === -1 ? document.querySelector(elem) : document.querySelectorAll(elem);
@@ -73,6 +72,7 @@
       insertClose:        true,
       insertBack:         true,
       levelTitleAsBack:   true,
+      previewWidth:       0,
       labelClose:         '',
       labelBack:          'Back'
     };
@@ -173,6 +173,21 @@
         $toggle = Helpers.getElements(Settings.customToggle);
       }
 
+      // TODO : open on hover when preview is active
+      if(Settings.previewWidth > 0){
+        // user toggle
+        $nav.addEventListener('mouseenter', ()=>{
+          openNav();
+        });
+        //$nav.addEventListener('mouseleave', ()=>{
+        //  closeNav();
+        // });
+        //const $previewElements = Helpers.getElements('.preview-element');
+        //$previewElements.forEach(($p) => {
+    
+          //});
+        //});
+      }
       if ($toggle && $toggle.length) {
         $toggle.forEach(($t) => {
           $t.addEventListener('click', toggleNav($t));
@@ -282,14 +297,26 @@
         // nav must be block so we can get rendered width
         $nav.style.display = 'block';
 
+
+  
         const computedWidth = Helpers.formatSizeVal(_containerWidth = $nav_container.offsetWidth);
         const computedHeight = Helpers.formatSizeVal(_containerHeight = $nav_container.offsetHeight);
 
+
+        console.log(computedWidth);
         // fix 100% transform glitching
-        Styles.add(
-          `.hc-offcanvas-nav.${navUniqId}.nav-position-left .nav-container`,
-          `transform: translate3d(-${computedWidth}, 0, 0)`
-        );
+        if(Settings.previewWidth > 0){
+          Styles.add(
+            `.hc-offcanvas-nav.${navUniqId}.nav-position-left .nav-container`,
+            `transform: translate3d(0, 0, 0)`
+          );
+        }else{
+          Styles.add(
+            `.hc-offcanvas-nav.${navUniqId}.nav-position-left .nav-container`,
+            `transform: translate3d(-${computedWidth}, 0, 0)`
+          );
+        }
+
         Styles.add(
           `.hc-offcanvas-nav.${navUniqId}.nav-position-right .nav-container`,
           `transform: translate3d(${computedWidth}, 0, 0)`
@@ -355,12 +382,24 @@
         if (['left', 'right'].indexOf(Settings.position) !== -1) {
           // container width
           Styles.add(`.hc-offcanvas-nav.${navUniqId} .nav-container`, `width: ${width}`);
+  
+          if(Settings.previewWidth > 0){
+            const previewWidth = Helpers.formatSizeVal(Settings.previewWidth);
+            const previewElementWidth = Helpers.formatSizeVal(Settings.previewWidth - 17);
+            Styles.add(`.hc-offcanvas-nav.${navUniqId} .nav-wrapper`, `width: ${width}`);
+            Styles.add(`.hc-offcanvas-nav.${navUniqId} .preview-element`, `width: ${previewElementWidth}`);
+            Styles.add(`.hc-offcanvas-nav.${navUniqId}.show-preview:not(.${navOpenClass}) .nav-container`, `width: ${previewWidth};overflow: hidden;`);
+          }
+
         }
+        
         else {
           // container height
           Styles.add(`.hc-offcanvas-nav.${navUniqId} .nav-container`, `height: ${height}`);
         }
 
+
+      
         // container transform
         Styles.add(
           `.hc-offcanvas-nav.${navUniqId}.nav-position-left .nav-container`,
@@ -420,6 +459,7 @@
           Helpers.isTouchDevice ? 'touch-device' : '',
           wasOpen ? navOpenClass : '',
           Settings.rtl ? 'rtl' : '',
+          (Settings.previewWidth > 0) ? 'show-preview': '',
           Settings.insertClose === true && !Settings.labelClose ? 'nav-close-button-empty' : ''
         ].join(' ').trim().replace(/  +/g, ' ');
 
@@ -427,6 +467,9 @@
         $nav.className = navClasses;
         $nav.setAttribute('aria-hidden', true);
 
+        if(Settings.previewWidth > 0){
+          $nav.style.visibility = 'visible';
+        }
         // set css variable so we can use it in themes if needed
         document.documentElement.style.setProperty('--nav-level-spacing', Settings.levelSpacing + 'px');
 
@@ -586,6 +629,7 @@
           let menu_count = -1;
 
           menu.forEach((nav, i_nav) => {
+
             if (nav.tagName !== 'UL') {
               $content.appendChild(nav.content);
               return;
@@ -835,6 +879,7 @@
             });
           });
 
+
           // insert back links
           if (level && typeof backIndex !== 'undefined') {
             if (Settings.insertBack !== false && Settings.levelOpen === 'overlap') {
@@ -964,13 +1009,15 @@
         else {
           closeNav();
 
-          if (timeoutVsb) {
-            setTimeout(() => {
+          if(Settings.previewWidth === 0 ){
+            if (timeoutVsb) {
+              setTimeout(() => {
+                $nav.style.visibility = '';
+              }, _transitionDuration);
+            }
+            else {
               $nav.style.visibility = '';
-            }, _transitionDuration);
-          }
-          else {
-            $nav.style.visibility = '';
+            }
           }
         }
       };
@@ -1441,7 +1488,10 @@
         }
 
         setTimeout(() => {
-          $nav.style.visibility = '';
+          if(Settings.previewWidth ===0){
+            $nav.style.visibility = '';
+          }
+       
 
           // trigger "close" event
           if ($nav._eventListeners.close) {

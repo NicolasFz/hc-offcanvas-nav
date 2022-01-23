@@ -357,4 +357,16 @@ body.hc-nav-open {
     text-align: right;
     direction: rtl;
   }
+
+  &.show-preview{
+    .nav-container {
+      transition: width $hc-offcanvas-nav-transition-duration $hc-offcanvas-nav-transition-timing-function;
+    }
+    *:not(.nav-open){
+     
+    
+    }
+
+  }
 }
+
